@@ -6,5 +6,6 @@ This is a simple calculator with UI
 
 
      +,-,*,/ and clear functions are added
+     square,squareroot,factors,HCF can be find
      
      
