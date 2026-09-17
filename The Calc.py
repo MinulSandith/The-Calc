@@ -4,8 +4,14 @@ import operator
 root = tk.Tk()
 root.title("The Calc")
 
-root.iconbitmap('./Calculator.ico')
-root.attributes('-toolwindow', True)
+try:
+  root.iconbitmap('./Calculator.ico')
+except tk.TclError:
+  pass
+try:
+  root.attributes('-toolwindow', True)
+except tk.TclError:
+  pass
 e=tk.Entry(root, borderwidth=9 ,width=60)
 e.grid(row=0 ,column=1 ,columnspan=5)
 global xx
@@ -132,7 +138,7 @@ def factors():
 def HCF():
    global xx
    xx="HCF"
-   calc.insert(1," ")
+   calc.append(" ")
    opp.append("HCF")
    e.insert("end"," HCF ")
 
@@ -150,7 +156,7 @@ def equal():
         print("y")
         answer=num1*num1
    if opp[0]=="squareroot":
-        answer=sqrt(num1)
+        answer=num1**0.5 if num1>=0 else sqrt(num1)
    if opp[0]=="factors":
          input=num1
          numbers = range(1,int(input)+1)
@@ -161,7 +167,7 @@ def equal():
               
               answer.append(round(b))
    e.insert("end","="+str(answer))
-     
+   k=1
 
   if l==2:
    num1=int(num[0])
@@ -176,7 +182,7 @@ def equal():
 
         answer=num1*num2
    elif opp[0]=="/":
-      answer=num1/num2
+      answer="undefined" if num2==0 else num1/num2
    elif opp[0]=="HCF":
          
          n1=num1
