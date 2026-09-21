@@ -1,311 +1,173 @@
-from cmath import sqrt
+import cmath
+import math
+import re
 import tkinter as tk
-import operator
-root = tk.Tk()
-root.title("The Calc")
 
-try:
-  root.iconbitmap('./Calculator.ico')
-except tk.TclError:
-  pass
-try:
-  root.attributes('-toolwindow', True)
-except tk.TclError:
-  pass
-e=tk.Entry(root, borderwidth=9 ,width=60)
-e.grid(row=0 ,column=1 ,columnspan=5)
-global xx
-global k
-k=0
-
-global answer
-
-opp=[]
-x=0
-calc=[]
-
-def n0():
-  global xx
-  calc.append("0")
-
-  xx="0"
-  e.insert("end","0")
+DIGITS = "0123456789"
+ARITH_OPS = "+-*/"
+SAFE_EXPR = re.compile(r"[0-9+\-*/(). ]+")
 
 
-def n1():
-   global xx
-   xx="1"
-   calc.append("1")
-   e.insert("end","1")
-   
-def n2():
- global xx
- xx="2"
- e.insert("end","2")
- calc.append("2")
+class CalcApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("The Calc")
 
-def n3():
-   global xx
-   xx="3"
-   e.insert("end","3")
-   calc.append("3")
+        try:
+            self.root.iconbitmap("./Calculator.ico")
+        except tk.TclError:
+            pass
+        try:
+            self.root.attributes("-toolwindow", True)
+        except tk.TclError:
+            pass
 
-def n4():
-   global xx
-   xx="4"
-   calc.append("4")
-   e.insert("end","4")
+        self.entry = tk.Entry(root, borderwidth=9, width=60)
+        self.entry.grid(row=0, column=1, columnspan=5)
+        self.just_evaluated = False
 
-def n5():
-   global xx
-   xx="5"
-   calc.append("5")
-   e.insert("end","5")
+        self._build_buttons()
+        self.root.bind("<Key>", self._on_key)
 
-def n6():
-   global xx
-   xx="6"
-   e.insert("end","6")
-   calc.append("6")
+    # -- low-level entry helpers ------------------------------------
 
-def n7():
-   global xx
-   xx="7"
-   e.insert("end","7")
-   calc.append("7")
+    def insert_text(self, text):
+        if self.just_evaluated:
+            self.just_evaluated = False
+            if text and (text[0] in DIGITS or text[0] == "."):
+                self.entry.delete(0, tk.END)
+        self.entry.insert(tk.INSERT, text)
 
-def n8():
+    def insert_decimal(self):
+        pos = self.entry.index(tk.INSERT)
+        before = self.entry.get()[:pos]
+        last_segment = re.split(r"[+\-*/() ]", before)[-1]
+        if "." not in last_segment:
+            self.insert_text(".")
 
-   global xx
-   xx="8"
-   e.insert("end","8")
-   calc.append("8")
+    def backspace(self):
+        self.just_evaluated = False
+        pos = self.entry.index(tk.INSERT)
+        if pos > 0:
+            self.entry.delete(pos - 1)
 
-def n9():
-   global xx
-   xx="9"
-   e.insert("end","9")
-   calc.append("9")
+    def clear(self):
+        self.entry.delete(0, tk.END)
+        self.just_evaluated = False
 
-def addition():
- global xx
- xx="+"
- e.insert("end","+")
+    # -- evaluation ---------------------------------------------------
 
+    def evaluate(self):
+        text = self.entry.get().strip()
+        if not text:
+            return
 
- calc.append(" ")
- opp.append("+")
+        try:
+            if "square root" in text:
+                num = float(text.replace("square root", "").strip())
+                result = num**0.5 if num >= 0 else cmath.sqrt(num)
+            elif "square" in text:
+                num = float(text.replace("square", "").strip())
+                result = num**2
+            elif "factors" in text:
+                num = int(float(text.replace("factors", "").strip()))
+                if num <= 0:
+                    raise ValueError("factors needs a positive integer")
+                result = [d for d in range(1, num + 1) if num % d == 0]
+            elif "HCF" in text:
+                left, right = text.split("HCF")
+                a = int(float(left.strip()))
+                b = int(float(right.strip()))
+                result = math.gcd(a, b)
+            else:
+                if not SAFE_EXPR.fullmatch(text):
+                    raise ValueError("invalid characters")
+                result = eval(text, {"__builtins__": {}}, {})
+                if isinstance(result, float) and result.is_integer():
+                    result = int(result)
+        except ZeroDivisionError:
+            result = "undefined"
+        except Exception:
+            result = "error"
 
-def substraction():
-   global xx
-   xx="-"
-   calc.append(" ")
-   opp.append("-")
-   e.insert("end","-")
+        self.entry.delete(0, tk.END)
+        self.entry.insert(0, str(result))
+        self.just_evaluated = True
 
-def division():
-   global xx
-   xx="/"
-   calc.append(" ")
-   opp.append("/")
-   e.insert("end","/")
+    # -- keyboard support ----------------------------------------------
 
-def multiplication():
-   global xx
-   xx="*"
-   calc.append(" ")
-   opp.append("*")
-   e.insert("end","*")
+    def _on_key(self, event):
+        if event.char and event.char in DIGITS + ARITH_OPS:
+            self.insert_text(event.char)
+        elif event.char == ".":
+            self.insert_decimal()
+        elif event.keysym in ("Return", "KP_Enter"):
+            self.evaluate()
+        elif event.keysym == "BackSpace":
+            self.backspace()
+        elif event.keysym == "Escape":
+            self.clear()
 
-def square():
-   global xx
-   xx="square"
-   
-   opp.append("square")
-   e.insert("end"," square ")
-def squreroot():
-   global xx
-   xx="squareroot"
-   calc.append(" ")
-   opp.append("squareroot")
-   e.insert("end"," square root ")
-def factors():
-   global xx
-   xx="factors"
-   calc.append(" ")
-   opp.append("factors")
-   e.insert("end"," factors ")
-def HCF():
-   global xx
-   xx="HCF"
-   calc.append(" ")
-   opp.append("HCF")
-   e.insert("end"," HCF ")
+    # -- button layout --------------------------------------------------
 
+    def _build_buttons(self):
+        root = self.root
 
+        def digit_btn(d, row, col):
+            tk.Button(
+                root, text=d, width=10, command=lambda: self.insert_text(d)
+            ).grid(row=row, column=col)
 
+        for d, (row, col) in zip("789", [(1, 1), (1, 2), (1, 3)]):
+            digit_btn(d, row, col)
+        for d, (row, col) in zip("456", [(2, 1), (2, 2), (2, 3)]):
+            digit_btn(d, row, col)
+        for d, (row, col) in zip("123", [(3, 1), (3, 2), (3, 3)]):
+            digit_btn(d, row, col)
+        digit_btn("0", 4, 2)
 
-def equal():
-  global k
-  numbers= ''.join(calc)
-  num=numbers.split()
-  l=len(num)
-  if l==1:
-   num1=int(num[0])
-   if opp[0]=="square":
-        print("y")
-        answer=num1*num1
-   if opp[0]=="squareroot":
-        answer=num1**0.5 if num1>=0 else sqrt(num1)
-   if opp[0]=="factors":
-         input=num1
-         numbers = range(1,int(input)+1)
-         answer=[]
-         for a in numbers:
-            b=input/a
-            if round(b)==b:
-              
-              answer.append(round(b))
-   e.insert("end","="+str(answer))
-   k=1
+        def op_btn(text, op, row, col):
+            tk.Button(
+                root, text=text, width=10, command=lambda: self.insert_text(op)
+            ).grid(row=row, column=col)
 
-  if l==2:
-   num1=int(num[0])
-   num2=int(num[1])
-   if opp[0]=="+":
+        op_btn("+", "+", 1, 4)
+        op_btn("-", "-", 2, 4)
+        op_btn("*", "*", 3, 4)
+        op_btn("/", "/", 4, 4)
 
-        answer=num1+num2
-   elif opp[0]=="-":
+        tk.Button(root, text="clear", width=10, command=self.clear).grid(
+            row=4, column=1
+        )
+        tk.Button(root, text="=", width=10, command=self.evaluate).grid(
+            row=4, column=3
+        )
 
-        answer=num1-num2
-   elif opp[0]=="*":
+        tk.Button(
+            root, text="square", width=10, command=lambda: self.insert_text(" square ")
+        ).grid(row=1, column=5)
+        tk.Button(
+            root,
+            text="Square root",
+            width=10,
+            command=lambda: self.insert_text(" square root "),
+        ).grid(row=2, column=5)
+        tk.Button(
+            root, text="Factors", width=10, command=lambda: self.insert_text(" factors ")
+        ).grid(row=3, column=5)
+        tk.Button(
+            root, text="HCF", width=10, command=lambda: self.insert_text(" HCF ")
+        ).grid(row=4, column=5)
 
-        answer=num1*num2
-   elif opp[0]=="/":
-      answer="undefined" if num2==0 else num1/num2
-   elif opp[0]=="HCF":
-         
-         n1=num1
-         n2=num2
-         fact1=[]
-         input1=int(n1)
-         numbers1 = range(1,int(input1)+1)
-
-         for a1 in numbers1:
-            b1=input1/a1
-            if round(b1)==b1:
-               fact1.append(round(b1))
-
-         fact2=[]
-         input2=int(n2)
-         numbers2 = range(1,int(input2)+1)
-
-         for a2 in numbers2:
-            b2=input2/a2
-            if round(b2)==b2:
-               fact2.append(round(b2))
-         len1=len(fact1)
-         len2=len(fact2)
-
-         hcf=[]
-         if n1>n2:
-            leng=len1
-            for x in range(int(leng)):
-               if fact1[x] in fact2:
-                  hcf.append(fact1[x])
-         elif n2>n1:
-                  leng=len2
-                  for x in range(int(leng)):
-                     if fact2[x] in fact1:
-                        hcf.append(fact2[x])
-
-         answer=hcf[0]
-        
+        tk.Button(root, text="⌫", width=10, command=self.backspace).grid(
+            row=5, column=1
+        )
+        tk.Button(root, text=".", width=10, command=self.insert_decimal).grid(
+            row=5, column=2
+        )
 
 
-   e.insert("end","="+str(answer))
-
-
-   
-   k=1
-  if l==3:
-
-   opp.clear()
-   calc.clear()
-   e.delete(0,'end')
-
-   e.insert(0,"this is only supporting one operation")
-   k=1
-
-
-
-  
-
-def out():
- global k
- if k==1:
-
-  opp.clear()
-  calc.clear()
-  e.delete(0,'end')
-  k=0
-
-def clear():
-  opp.clear()
-  calc.clear()
-  e.delete(0,'end')
-  k=0
-
-#add append to calc with a spce to divide toletters,then join ,and split
-
-one=tk.Button(root,text="1",width=10,command=lambda:[out(),n1()])
-two=tk.Button(root,text="2",width=10,command=lambda:[out(),n2()])
-three=tk.Button(root,text="3",width=10,command=lambda:[out(),n3()])
-four=tk.Button(root,text="4",width=10,command=lambda:[out(),n4()])
-five=tk.Button(root,text="5",width=10,command=lambda:[out(),n5()])
-six=tk.Button(root,text="6",width=10,command=lambda:[out(),n6()])
-seven=tk.Button(root,text="7",width=10,command=lambda:[out(),n7()])
-eight=tk.Button(root,text="8",width=10,command=lambda:[out(),n8()])
-nine=tk.Button(root,text="9",width=10,command=lambda:[out(),n9()])
-
-add=tk.Button(root, text="+",width=10,command=lambda:[out(),addition()])
-substract=tk.Button(root, text="-",width=10,command=lambda:[out(),substraction()])
-multiply=tk.Button(root, text="*",width=10,command=lambda:[out(),multiplication()])
-divide=tk.Button(root, text="/",width=10,command=lambda:[out(),division()])
-equal=tk.Button(root,text="=",width=10,command= equal  )
-zero=tk.Button(root,text="0",width=10,command=lambda:[out(),n0()])
-clear_it=tk.Button(root,text="clear",width=10,command=lambda:[out(),clear()])
-
-square_it=tk.Button(root,text="square",width=10,command=lambda:[out(),square()])
-squreroot_it=tk.Button(root,text="Square root",width=10,command=lambda:[out(),squreroot()])
-factors_it=tk.Button(root,text="Factors",width=10,command=lambda:[out(),factors()])
-HCF_it=tk.Button(root,text="HCF",width=10,command=lambda:[out(),HCF()])
-
-one.grid(row=3, column=1)
-two.grid(row=3, column=2)
-three.grid(row=3, column=3)
-
-four.grid(row=2, column=1)
-five.grid(row=2, column=2)
-six.grid(row=2, column=3)
-
-seven.grid(row=1, column=1)
-eight.grid(row=1, column=2)
-nine.grid(row=1, column=3)
-
-zero.grid(row=4, column=2)
-
-add.grid(row=1, column=4)
-substract.grid(row=2,column=4)
-multiply.grid(row=3,column=4)
-divide.grid(row=4,column=4)
-clear_it.grid(row=4,column=1)
-
-square_it.grid(row=1,column=5)
-squreroot_it.grid(row=2,column=5)
-factors_it.grid(row=3,column=5)
-HCF_it.grid(row=4,column=5)
-
-equal.grid(row=4, column=3)
-
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    CalcApp(root)
+    root.mainloop()
