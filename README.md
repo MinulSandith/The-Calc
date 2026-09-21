@@ -1,11 +1,14 @@
 # The Calc
 
-A simple desktop calculator built with Python's built-in **Tkinter** GUI toolkit. Beyond the standard four operations, it supports a few extra math utilities: square, square root, prime factors, and HCF (Highest Common Factor).
+A simple desktop calculator built with Python's built-in **Tkinter** GUI toolkit, styled with a dark theme, a two-line display, and a colored operator column. Beyond the standard four operations, it supports a few extra math utilities: square, square root, prime factors, and HCF (Highest Common Factor).
+
+> The screenshot below predates the current dark theme; run the app to see the current look.
 
 ![Calculator](https://user-images.githubusercontent.com/106053448/169861230-1142493d-aee8-4529-add0-77a1aa2cadec.jpg)
 
 ## Features
 
+- Dark-themed UI: black two-line display (dim expression / bold result), dark digit pad, light operator column, and an orange `=` accent
 - Basic arithmetic: addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), with support for **chained operations** and parentheses (e.g. `5+3*2`)
 - Decimal numbers (`.` button)
 - Backspace (`⌫` button) to correct the last character
