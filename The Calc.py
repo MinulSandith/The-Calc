@@ -7,6 +7,8 @@ from tkinter import font as tkfont
 DIGITS = "0123456789"
 ARITH_OPS = "+-*/"
 SAFE_EXPR = re.compile(r"[0-9+\-*/(). ]+")
+MAX_FACTOR_INPUT = 1_000_000
+RESULT_FONT_SIZES = (38, 30, 24, 18)
 
 # -- theme -----------------------------------------------------------------
 
@@ -126,8 +128,25 @@ class CalcApp:
         self.result_label.pack(fill="x", padx=20, pady=(0, 20))
 
     def _refresh_display(self):
-        self.history_label.configure(text=self.history)
-        self.result_label.configure(text=self.buffer if self.buffer else "0")
+        history_text = self.history
+        result_text = self.buffer if self.buffer else "0"
+
+        self.history_label.configure(text=history_text)
+        self.result_label.configure(text=result_text)
+
+        self._fit_font(self.history_label, self.history_font, history_text, 16, 10)
+        self._fit_font(self.result_label, self.result_font, result_text, 38, 16)
+
+    def _fit_font(self, label, font, text, base_size, min_size):
+        available = label.winfo_width()
+        if available <= 1:
+            available = (self.root.winfo_width() or 332) - 40
+
+        size = base_size
+        font.configure(size=size)
+        while size > min_size and font.measure(text) > available:
+            size -= 2
+            font.configure(size=size)
 
     # -- low-level buffer helpers -----------------------------------------
 
@@ -158,6 +177,13 @@ class CalcApp:
 
     # -- evaluation ---------------------------------------------------
 
+    @staticmethod
+    def _require_int(text):
+        value = float(text)
+        if not value.is_integer():
+            raise ValueError(f"{text} is not a whole number")
+        return int(value)
+
     def evaluate(self):
         text = self.buffer.strip()
         if not text:
@@ -171,14 +197,16 @@ class CalcApp:
                 num = float(text.replace("square", "").strip())
                 result = num**2
             elif "factors" in text:
-                num = int(float(text.replace("factors", "").strip()))
+                num = self._require_int(text.replace("factors", "").strip())
                 if num <= 0:
                     raise ValueError("factors needs a positive integer")
+                if num > MAX_FACTOR_INPUT:
+                    raise ValueError("number too large for factors")
                 result = [d for d in range(1, num + 1) if num % d == 0]
             elif "HCF" in text:
                 left, right = text.split("HCF")
-                a = int(float(left.strip()))
-                b = int(float(right.strip()))
+                a = self._require_int(left.strip())
+                b = self._require_int(right.strip())
                 result = math.gcd(a, b)
             else:
                 if not SAFE_EXPR.fullmatch(text):

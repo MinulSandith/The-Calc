@@ -15,7 +15,7 @@ A simple desktop calculator built with Python's built-in **Tkinter** GUI toolkit
 - Keyboard input: type digits/operators, `Enter` to evaluate, `Backspace` to delete, `Escape` to clear
 - `square` — squares a single number
 - `square root` — square root of a single number (returns a complex result for negative input)
-- `factors` — lists all factors of a single number
+- `factors` — lists all factors of a single whole number (capped at 1,000,000 to keep the UI responsive)
 - `HCF` — Highest Common Factor of two numbers, computed with `math.gcd`
 - `clear` — resets the display and current calculation
 - Pressing a digit after a result starts a new calculation; pressing an operator continues from the result
@@ -43,6 +43,8 @@ Click the number and operator buttons (or type on your keyboard) to build an exp
 ## Known limitations
 
 - `square`, `square root`, `factors`, and `HCF` are still standalone operations — they can't be mixed into a larger arithmetic expression in the same calculation.
+- `factors` and `HCF` require whole-number input; decimals are rejected with an error rather than silently truncated.
+- `factors` rejects numbers above 1,000,000, since checking every divisor of a much larger number would freeze the UI (there's no background thread).
 - The window icon (`Calculator.ico`) only applies on Windows; other platforms skip it gracefully.
 
 ## Contributing
